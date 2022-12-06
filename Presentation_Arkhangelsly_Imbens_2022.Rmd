@@ -1,0 +1,850 @@
+---
+title: "Doubly-Robust Identification"
+subtitle: "^[Arkhangelsky, Imbens (2022)]"
+author: "Omer Erhan Erbis"
+institute: "Universität Bonn"
+date: "`r Sys.Date()`"
+output:
+  beamer_presentation:
+    theme: "Boadilla"
+    colortheme: "dove"
+    fonttheme: "structurebold"
+    #extra_dependencies: ["bbm", "threeparttable"]
+classoption: aspectratio=149
+---
+
+# General Treatment Effect Models
+
+## The Non-parametric True Model
+
+\begin{equation}
+  Y_{i t}=g_t\left(W_{i t}, U_i, X_{i t}, \varepsilon_{i t}\right)
+\end{equation}
+
+Where:
+
+
+- $Y_{i t}$ denoting the outcome of interest
+- $W_{i t}$ an indicator for the treatment
+- $U_i$ the unobserved confounder
+- $X_{i t}$ the observed attributes/confounders/covariates
+- $\varepsilon_{i t}$ an idiosyncratic error term
+
+
+The possibility that $U_i$ may be correlated with $W_{i t}$ even after controlling for observed confounders prevents us from estimating the average effect of $W_{i t}$ on the outcome by comparing covariate-adjusted treated and control outcomes.
+
+
+
+
+## The General Two-Way Fixed Effects Model
+
+\begin{align*}
+  g_t(w, u, x, e) = \alpha(u)+ \lambda_t+w &\tau+x^{\top} \beta+ e \\
+  &\\
+  \texttt{in combination with mean independence} \; &\mathbb{E}\left[\varepsilon_{i t} \mid\left\{\left(W_{i l}, X_{i l}\right)\right\}_{l=1}^T\right] =0
+\end{align*}
+
+\textbf{Properties:}
+
+- Linear
+- Separable
+- Additive
+
+However, this model makes strong implicit assumptions, particularly on $\tau$ 
+<!-- $\tau$ can be heterogeneous, can be a function of multiple components but all excluded -->
+<!-- $\tau = \tau(U_i)$  -->
+
+
+Omitted variable bias implies that the bias from an unobserved confounder $U_i$ comes from the combination of its correlation with the outcome $Y_{i t}$ and its correlation with $W_{i t}$.
+
+
+
+
+
+## The Modelling Restriction
+
+To remove endogeneity, the strategy of conditioning on cluster-specific statistic is proposed
+
+
+- $\underline{W}_i$ \text { be the } $T$ \text {-vector of assignments with typical element } $W_{i t}$ from the support $\mathbf{W}$.
+- \text { where } $S_i$ \text { is a known function of } $W_i$
+
+\begin{equation}
+  \underline{W}_i \bot U_i \mid S_i
+\end{equation}
+
+
+- e.g. $S_i = \bar W_i = \sum_{t} W_{i t} / T$
+
+The strategy is to leverage the role of design assumptions to control for endogeneity in subpopulations, not to control or restrict the dependence of outcomes on unobserved confounders
+
+
+<!-- this imposes cluster-specific distribution to treatment assignment -->
+
+
+## The Proposed Estimator(TWFE estimator equivalence by De Chaisemartin and d’Haultfoeuille, 2020):
+
+\begin{equation}
+  \hat{\tau}=\frac{1}{N T} \sum_{i, t} \hat{\gamma}_{i t} Y_{i t}
+\end{equation}
+
+
+- $\hat \gamma_{i t}$ are weights
+- $\hat \gamma_{i t} = \hat \gamma_{i t}(\underline{W}_i)$ and $\hat \gamma_{i t} = \hat \gamma_{i t}(\underline{W}_i, X_i)$ also allowed
+- $\hat \gamma_{i t} \bot  Y_{i t}$
+
+
+Researcher explicitly select weights by solving quadratic optimization problem
+
+
+
+
+
+
+
+# Binary Treatment Effect Model without Covariates
+
+## Setup
+
+
+- $\underline{w}^{t} \equiv\left(w_{1}, w_{2}, \ldots, w_{t}\right)$ sequence of treatment exposures up to time $t$
+- $\underline{w}^{T} \equiv \underline{w}$
+-- Treatment allowed to switch on and off: e.g. $\underline{w}^{3} = (1,0,1) \; \text{for} \; t=3$
+\linebreak
+\linebreak
+- $Y_{i t}\left(\underline{w}^{t}\right) \equiv Y_{i t}\left(w_{1}, w_{2}, \ldots, w_{t}\right)$ potential outcome for unit $i$ at time $t$ given treatment history up to time $t$
+
+
+
+## Assumptions
+
+### Assumption B.1 - No Dynamic Treatment Effects
+
+For arbitrary t-component assignment vectors $\underline{w}$ and $\underline{w^{\prime}}$ such that the period $t$ assignment is the same, $w_{t}=w_{t}^{\prime}$ the potential outcomes in period $t$ are the same:
+
+\begin{equation*}
+  Y_{i t}(\underline{w})=Y_{i t}\left(\underline{w}^{\prime}\right)
+\end{equation*}
+
+<!-- This assumption makes the model static, simpler and still reasonable and relevant to general case. Criticallly does not restrict the heterogeneity in contemporaneous treatment effect. -->
+
+###
+
+This reduces the potential outcomes to history-independent setting:
+
+\begin{equation*}
+  Y_{i t}(\underline{w})=Y_{i t}\left({w}_t\right) .
+\end{equation*}
+
+###
+
+And thus, the following definition and reduction is possible:
+
+\begin{equation*}
+  \underline{Y}_{i}(\underline{w}) 
+  \equiv\left(Y_{i 1}\left(\underline w^{1}\right), \ldots, Y_{i t}\left(\underline w^{T}\right)\right)
+  \equiv\left(Y_{i 1}\left(w_{1}\right), \ldots, Y_{i t}\left(w_{T}\right)\right)
+\end{equation*}
+
+
+## Assumptions
+
+###
+
+The Assumption B.1 makes it possible to define the observed outcomes $Y_{i t} \in \mathbf{Y} \, \text{where} \, \mathbf{Y} \in \mathbb{R^{N \times T}}$ in potential outcomes notation as:
+
+\begin{equation*}
+  Y_{i t}=W_{i t} Y_{i t}(1)+\left(1-W_{i t}\right) Y_{i t}(0)
+\end{equation*}
+
+
+## Assumptions
+
+
+
+### Assumption B.2 - Latent Unconfoundedness
+
+There exist a random variable $U_{i} \in \mathbb{R}^{d}$ such that the following conditional independence holds:
+
+\begin{equation*}
+  \underline{W}_{i} \bot\left\{\underline{Y}_{i}(\underline{w})\right\}_{\underline{w}} \mid U_{i}
+\end{equation*}
+
+
+\textbf{\textit{Personal Note}}: \textit{This assumption in particular restricts (more than stressed) the domain for the applications, as certain ones are unable to fulfill this due to the nature of relation between} ${W}_{i}$ \textit{and} $\left\{\underline{Y}_{i}(\underline{w})\right\}_{\underline{w}}$. \textit{(e.g.} $W_{i t}$ \textit{as a choice that is used for direct optimization of} $Y_{i t}$ \textit{)}
+
+<!-- We do not restrict $U_{i}$ to be scalar, nor do we restrict the functional form of the relation between $\underline{W}_{i}$ and $U_{i}$, or the relation between $Y_{i}(\underline{w})$ and $U_{i}$. This assumption implies that once, we control for the (unobserved, and potentially vector-valued) $U_{i}$, all the differences in the treatment paths $\underline{W}_{i}$ across units are unrelated to the potential outcomes -->
+
+<!-- It is natural when $W_{i t}$ is either driven by some (quasi)-experimental shocks or is a choice variable that is not used to optimise $Y_{i t}$ directly -->
+
+
+
+
+
+
+## Setting up the Stage
+
+###
+
+- $\pi_{k} \equiv \operatorname{pr}\left(\underline{W}_{i}=\mathbf{W}_{k}\right)=\mathbb{E}\left[\mathbf{1}_{\underline{W}}=\mathbf{W}_{k}\right]$ represents the (positive) probabilities of occurence of elements of assignment path.
+- Let $K \leq 2^{T}$ be the number of rows in support $\mathbf{W}$
+- Let $k(i)$ be the row $\mathbf{W}_{k}$ of the support matrix $\mathbf{W}$ such that $\mathbf{W}_{k(i)}=\underline{W}_{i}$
+
+
+
+###
+
+Recall that the proposed estimator has the following form:
+
+\begin{equation*}
+  \hat{\tau}(\gamma)=\frac{1}{N T} \sum_{i=1}^{N} \sum_{t=1}^{T} \gamma_{i t} Y_{i t} = \frac{1}{N T} \sum_{i=1}^{N} \sum_{t=1}^{T} \gamma_{t}(\underline{W}_{i}) Y_{i t}
+\end{equation*}
+
+
+where proposed weights $\gamma_{i t}$ should satisfy the restrictions:
+
+-$\frac{1}{N T} \sum_{i, t} W_{i t} \gamma_{i t}=1$
+-$\frac{1}{N T} \sum_{i, t}\left(1-W_{i t}\right) \gamma_{i t}=-1$
+
+
+<!-- estimator is linear in domain R -->
+<!-- the class of estimators are chosen, thus another narrowing down is made implicitly -->
+
+
+
+## Identification: An Example
+
+
+Distribution for the Example
+
+\begin{center}
+\begin{tabular}{lcc}
+\hline$k$ & $\mathbf{W}_{k}$ & $\pi_{k}$  \\
+\hline 1 & $(0,0,0)$ & $0.09$  \\
+2 & $(1,0,0)$ & $0.04$  \\
+3 & $(0,1,0)$ & $0.11$  \\
+4 & $(1,1,0)$ & $0.14$ \\
+5 & $(0,0,1)$ & $0.07$  \\
+6 & $(1,0,1)$ & $0.08$ \\
+7 & $(0,1,1)$ & $0.15$ \\
+8 & $(1,1,1)$ & $0.32$ \\
+\hline
+\end{tabular}
+\end{center}
+
+## Identification: An Example: Outcome Model
+
+###
+
+Suppose that in fact the potential outcomes $Y_{i t}(w)$ satisfy a two-way-fixed-effect structure and that the treatment effect is constant across time and units:
+
+
+\begin{align*}
+&Y_{i t}(w)=\alpha\left(U_{i}\right)+\lambda_{t}+\tau w+\varepsilon_{i t}, \\
+&\mathbb{E}\left[\varepsilon_{i t} \mid \underline{W}_{i}, U_{i}\right]=0
+\end{align*}
+
+
+## Identification: An Example - Outcome Model
+### The Two-way Fixed Effects Estimator
+
+The fixed-effect estimators uses least squares with two-way fixed effects to 'estimate' $\tau$ in population. This procedure leads in large samples to a particular set of weights $\gamma_{t}^{(\mathrm{fe})}\left(\underline{W}_{i}\right)$, and then to the following fixed-effect estimand:
+
+
+
+\begin{equation*}
+  \tau^{\mathrm{fe}}=\mathbb{E}\left[\frac{1}{T} \sum_{t} Y_{i t} \gamma_{t}^{(\mathrm{fe})}\left(\underline{W}_{i}\right)\right] 
+\end{equation*}
+
+The expectation here is taken over the $U_{i},\left\{\varepsilon_{i t}\right\}_{t=1}^{T}$ and the assignment path $\underline{W}_{i}$
+
+
+## Identification: An Example - Outcome Model
+
+
+For the given distribution, the weights implied by the fixed-effect estimator are presented in the last three columns:
+
+\begin{center}
+\begin{tabular}{lccrrr}
+\hline$k$ & $\mathbf{W}_{k}$ & $\pi_{k}$ & $\gamma_{k 1}^{(f e)}$ & \multicolumn{1}{c}{$\gamma_{k 2}^{(f e)}$} & \multicolumn{1}{c}{$\gamma_{k 3}^{(f e)}$} \\
+\hline 1 & $(0,0,0)$ & $0.09$ & $0.46$ & $-0.64$ & $0.18$ \\
+2 & $(1,0,0)$ & $0.04$ & $5.70$ & $-3.26$ & $-2.44$ \\
+3 & $(0,1,0)$ & $0.11$ & $-2.16$ & $4.60$ & $-2.44$ \\
+4 & $(1,1,0)$ & $0.14$ & $3.08$ & $1.98$ & $-5.07$ \\
+5 & $(0,0,1)$ & $0.07$ & $-2.16$ & $-3.26$ & $5.42$ \\
+6 & $(1,0,1)$ & $0.08$ & $3.08$ & $-5.88$ & $2.80$ \\
+7 & $(0,1,1)$ & $0.15$ & $-4.78$ & $1.98$ & $2.80$ \\
+8 & $(1,1,1)$ & $0.32$ & $0.46$ & $-0.64$ & $0.18$ \\
+\hline
+\end{tabular}
+\end{center}
+
+
+
+
+## Identification: An Example - Assignment Model
+
+###
+
+Suppose that in fact the potential outcomes $Y_{i t}(w)$ satisfy a two-way-fixed-effect structure and that the treatment effect is constant across time and units:
+suppose that DGP for the assignment mechanism $\underline{W_{i}}$ has the following form (which is consistent with the probabilities):
+
+\begin{equation*}
+  \forall\left(t, t^{\prime}\right): W_{i t} \bot W_{i t^{\prime}} \mid U_{i}, \quad \mathbb{E}\left[W_{i t} \mid U_{i}\right]=\frac{\exp \left(\alpha\left(U_{i}\right)+\lambda_{t}\right)}{1+\exp \left(\alpha\left(U_{i}\right)+\lambda_{t}\right)} .
+\end{equation*}
+
+
+One should note that this pair of restrictions implies a conditional independence restriction in the applications (The design choices authors make require $S_i$ to incorporate $\bar{W}_{i}$):
+
+<!-- CONSIDER WHY IT IS AS SUCH -->
+$$\underline{W}_{i} \bot\left\{\underline{Y}_{i}(\underline{w})\right\}_{\underline{w}} \mid \bar{W}_{i}$$
+
+where $\bar{W}_{i} \equiv \sum_{t=1}^{T} W_{i t} / T$ is the fraction of treated periods for unit $i$.
+
+
+
+
+## Identification: An Example - (Weak) Exclusivity of Models
+
+Suppose assignment model is correctly specified and outcome model is misspecified. The outcome model estimand $\tau^{\mathrm{fe}}$ may still be equal to the treatment effect $\left(\tau^{\mathrm{fe}}=\tau\right)$ if $\tau_{i t} = \tau$ and the following condition on the weights is satisfied for:
+
+\begin{equation*}
+\mathbb{E}\left[\gamma_{t}^{\mathrm{fe}}\left(\underline{W}_{i}\right) \mid \bar{W}_{i}\right]=0 \; \forall \; t, \bar{W}_{i}
+\end{equation*}
+
+
+
+
+
+## Identification: An Example - (Weak) Exclusivity of Models
+
+Suppose outcome model is correctly specified and assignment model is misspecified. Generally, the following is the case:
+
+\begin{equation*}
+\frac{1}{T} \sum_{t=1}^{T} \gamma_{t}^{(I P)}\left(\underline{W}_{i}\right)=\frac{1}{T} \sum_{t=1}^{T}\left(\frac{W_{i t}}{\mathbb{E}\left[W_{i t} \mid \bar{W}_{i}\right]}-\frac{1-W_{i t}}{\mathbb{E}\left[\left(1-W_{i t}\right) \mid \bar{W}_{i}\right]}\right) \neq 0
+\end{equation*}
+
+thus not balancing individual fixed effects.
+
+
+## Identification: An Example - (Weak) Exclusivity of Models
+
+One combine both strategies to form a double robust estimator that returns true treatment effect $\tau$ if either model is correctly specified that returns the following properties simultaneously: row sums to be 0 and $\mathbb{E}\left[\gamma_{t}^{\mathrm{fe}}\left(\underline{W}_{i}\right) \mid \bar{W}_{i}\right]=0 \; \forall \; t, \bar{W}_{i}$
+
+\begin{center}
+\begin{tabular}{lcrrr}
+\hline$\left(W_{1}, W_{2}, W_{3}\right)$ & $\pi_{k}$ & $\gamma_{1}^{(d r)}\left(\underline{W}_{k}\right)$ & $\gamma_{2}^{(d r)}\left(\underline{W}_{k}\right)$ & $\gamma_{3}^{(d r)}\left(\underline{W}_{k}\right)$ \\
+\hline$(0,0,0)$ & $0.09$ & $0.00$ & $0.00$ & $0.00$ \\
+$(1,0,0)$ & $0.04$ & $6.59$ & $-3.95$ & $-2.64$ \\
+$(0,1,0)$ & $0.11$ & $-1.46$ & $4.10$ & $-2.64$ \\
+$(1,1,0)$ & $0.14$ & $3.24$ & $1.66$ & $-4.90$ \\
+$(0,0,1)$ & $0.07$ & $-1.46$ & $-3.95$ & $5.42$ \\
+$(1,0,1)$ & $0.08$ & $3.24$ & $-6.39$ & $3.15$ \\
+$(0,1,1)$ & $0.15$ & $-4.81$ & $1.66$ & $3.15$ \\
+$(1,1,1)$ & $0.32$ & $0.00$ & $0.00$ & $0.00$ \\
+\hline
+\end{tabular}
+\end{center}
+
+
+
+
+
+
+
+
+
+
+
+
+## Identification through Outcome Model
+
+### The Assumption I.1
+
+The potential outcomes satisfy:
+
+\begin{equation}
+  \mathbb{E}\left[Y_{i t}(w) \mid U_{i}\right]=\alpha\left(U_{i}\right)+\lambda_{t}+\tau_{t}\left(U_{i}\right) w
+\end{equation}
+
+
+## Identification through Outcome Model - Restrictions 
+<!-- for  Constructing Convex Combination of Treatment Effects -->
+<!-- WHY we need CONVEX COMBINATION -->
+
+To identify a convex combination of $\tau_{t}\left(U_{i}\right)$ (we need to construct final treatment effect) we consider the weights $\gamma_{k t}$ that satisfy the following four restrictions:
+
+###
+ 
+\begin{align}
+\frac{1}{T} \sum_{k=1}^{K} \sum_{t=1}^{T} \pi_{k} \gamma_{k t} \mathbf{W}_{k t} &=1 \tag{i}\\
+\quad \forall k, \sum_{t} \gamma_{k t} &=0, \tag{ii}\\
+\forall t, \sum_{k=1}^{K} \pi_{k} \gamma_{k t} &=0 \tag{iii}\\
+\quad \forall(t, k), \gamma_{k t} \mathbf{W}_{k t} &\geq 0 \tag{iv}
+\end{align}
+
+$i-iv$ are natural given the outcome model described above. The $i$ & $iv$ ensure that we focus on a convex combination of treatment effects. The $ii$ & $iii$ guarantee that weights balance out the systematic variation in the baseline outcomes $Y_{i t}(0)$.
+
+## Identification through Outcome Model
+
+Let $\mathbb{W}_{\text {outc }}$ be the set of weights $\left\{\gamma_{k t}\right\}_{k, t}$ which satisfy previously discussed restrictions
+
+
+For any generic element $\gamma \in \mathbb{W}_{\text {outc }}$ define $\gamma_{t}\left(\underline{W}_{i}, \gamma\right)$(total weight of $\underline{W}_{i}$ instance) to pick out the period $t$ weight for a unit with assignment path $\underline{W}_{i}$ :
+
+\begin{align*}
+  \gamma_{t}\left(\underline{W}_{i}, \gamma\right) \equiv \sum_{k=1}^{K} \gamma_{k t} \mathbf{1}_{\underline{W}_{i}=\mathbf{W}_{k}}
+\end{align*}
+
+
+Using these weights we define the following estimand:
+
+
+\begin{equation*}
+  \tau(\gamma)=\mathbb{E}\left[\frac{1}{T} \sum_{t=1}^{T} Y_{i t} \gamma_{t}\left(\underline{W}_{i},\gamma\right)\right]
+\end{equation*}
+
+
+## Identification through Outcome Model
+
+### Proposition P.I.1.
+
+Suppose Assumptions B.1, B.2, and I.1 hold, and that $\gamma \in \mathbb{W}_{\text {outc. }}$. Then $\tau(\gamma)$ is a convex combination of $\tau_{t}\left(U_{i}\right)$ (over $i$ and $t$ )
+
+<!-- ### -->
+<!-- Proof: Appendix 5.1 -->
+
+
+<!-- Remark 1 to be discussed manually -->
+
+## Identification through Assignment Model (Design)
+
+### Propensity Scores
+
+For some random variable $S_{i} \equiv S\left(\underline{W}_{i}\right)$ let $r(\underline{w}, s)$ be the generalized propensity score:
+
+\begin{equation*}
+r(\underline{w}, s) \equiv \operatorname{pr}\left(\underline{W}_{i}=\underline{w} \mid S_{i}=s\right) .
+\end{equation*}
+
+### The Assumption I.2
+<!-- Sufficiency -->
+
+There exists a known $\underline{W_{i}}$-measurable sufficient statistic $S_{i} \in \mathbb{S}$ and a subset $\mathbb{A} \subset \mathbb{S}$ such that:
+
+\begin{equation*}
+\underline{W}_{i} \bot U_{i} \mid S_{i}=s,
+\end{equation*}
+
+and for all $s \in \mathbb{A}$ :
+
+\begin{equation*}
+\max _{\underline{w}}\{r(\underline{w}, s)\}<1 .
+\end{equation*}
+
+<!-- There always exist the worst case scenario: $S_i$ = $\underline{W}$ but overlap does not hold for this, We require different treatment assignment that generates the same unobserved distributions -->
+
+## Identification through Assignment Model (Design)
+
+### Proposition P.I.2. (Weak Unconfoundedness)
+
+<!-- Weak Unconfoundedness -->
+Suppose Assumptions B.1, B.2, and I.2 hold. Then for any $w$:
+
+\begin{equation*}
+\underline{\mathbf{1}}_{\underline{W}_{i}=\underline{w}} \bot \underline{Y}_{i}(\underline{w}) \mid S_{i} .
+\end{equation*}
+
+<!-- this is actually not constraining under B.2 -->
+<!-- ### -->
+<!-- Proof: Appendix 5.2 -->
+
+
+
+
+
+
+
+
+## Identification through Assignment Model (Design)
+
+Identification based on design only impose B.1 and B.2 on potential outcomes. With this, one can identify a convex combination of individual treatment effects $\tau_{t}\left(U_{i}\right)$ using the weights  $\gamma_{k t}$ that satisfy the following restrictions:
+
+###
+\begin{align}
+\frac{1}{T} \sum_{t k} \pi_{k} \gamma_{k t} \mathbf{W}_{k t} &=1 \; \forall \{k, s,t\} \tag{v} \\
+\quad \sum_{k: \mathbf{W}_{k} \in \mathbf{W}^{s}} \pi_{k} \gamma_{k t} &=0 \tag{vi} \; \forall \{k, s,t\} \\
+\quad \sum_{k: \mathbf{W}_{k} \in \mathbf{W}^{s}} \pi_{k} \gamma_{k t} \mathbf{W}_{k t} &\geq 0 \tag{vii} \; \forall \{k, s,t\}
+\end{align}
+
+## Identification through Assignment Model (Design)
+
+Let $\mathbb{W}_{\text {design }}$ be the set of weights $\left\{\gamma_{t k}\right\}_{t, k}$ that satisfy previously discussed assignment-model restrictions.
+
+For any generic element $\gamma \in \mathbb{W}_{\text {design }}$ define the $\gamma_{t}\left(W_{i}, \gamma\right)$ in the same way as before:
+
+\begin{align*}
+  \gamma_{t}\left(\underline{W}_{i}, \gamma\right) \equiv \sum_{k=1}^{K} \gamma_{k t} \mathbf{1}_{\underline{W}_{i}=\mathbf{W}_{k}}
+\end{align*}
+
+Using these weights consider the following estimand:
+
+\begin{equation*}
+\tau(\gamma)=\mathbb{E}\left[\frac{1}{T} \sum_{t=1}^{T} Y_{i t} \gamma_{t}\left(\underline{W}_{i}, \gamma\right)\right]
+\end{equation*}
+
+
+##
+
+### Proposition P.I.3.
+
+Suppose Assumptions B.1, B.2, and I.2 hold, and that $\gamma \in \mathbb{W}_{\text {design. Then }}$ $\tau(\gamma)$ is a convex combination of treatment effects $\tau_{t}\left(U_{i}\right)$ (over $i$ and $t$ )
+
+<!-- ### -->
+<!-- Proof: Similar to Appendix 5.1 -->
+
+
+
+
+
+
+
+# Double Robustness
+
+## Double Robust Identification
+
+Let $\mathbb{W}_{\mathrm{dr}}=\left(\mathbb{W}_{\text {outc }} \cap \mathbb{W}_{\text {design }}\right)$ and observe that, combining the restrictions $i$-$vii$, we get that any $\gamma \in \mathbb{W}_{\text {dr }}$ satisfies the following restrictions:
+
+$$
+\begin{gathered}
+\text { Target }: \frac{1}{T} \sum_{t k} \pi_{k} \gamma_{k t} \mathbf{W}_{k t}=1, \\
+\text { Within }-\text { unit balance }: \frac{1}{T} \sum_{t=1}^{T} \gamma_{k t}=0, \\
+\text { Within - period balance : } \sum_{k: \mathbf{W}_{k} \in \mathbf{W}^{s}} \pi_{k} \gamma_{k t}=0, \\
+\text { Non - negativity }: \gamma_{k t} \mathbf{W}_{k t} \geq 0 .
+\end{gathered}
+$$
+
+## Double Robust Identification
+
+### Theorem DR
+
+Suppose Assumptions B.1, B.2 hold, and either I.1, or I.2, or both hold. Then for any $\gamma \in \mathbb{W}_{\mathrm{dr}}$, the estimand $\tau(\gamma)$ is a convex combination of treatment effects $\tau_{t}\left(U_{i}\right)$ (over $i$ and $t$).
+
+<!-- ## -->
+
+<!-- \begin{equation} -->
+<!--   \mathbf{W}=\left(\begin{array}{lll} -->
+<!--   0 & 0 & 0 \\ -->
+<!--   1 & 0 & 1 \\ -->
+<!--   0 & 1 & 1 \\ -->
+<!--   1 & 1 & 1 -->
+<!--   \end{array}\right) -->
+<!-- \end{equation} -->
+
+
+
+# Double Robustness with Covariates
+
+## Double Robust Algorithm
+
+- Panel Data: $\left\{Y_{i t}, W_{i t}, X_{i}\right\}_{i, t}$ where $X_{i}$ time-invariant
+- Sufficient statistic $S_{i}$ provided (assumed to be constructed)
+- two $p$-dimensional functions of $\left(X_{i}, S_{i}, t\right)$ and $\left(X_{i}, S_{i}\right)$ for $X_{i}$:
+\begin{align*}
+\psi^{(1)}\left(X_{i}, S_{i}, t\right) &\equiv\left(\psi_{1}^{(1)}\left(X_{i}, S_{i}, t\right), \ldots, \psi_{p}^{(1)}\left(X_{i}, S_{i}, t\right)\right) \\
+\psi^{(2)}\left(X_{i}, t\right) &\equiv\left(\psi_{1}^{(2)}\left(X_{i}, t\right), \ldots, \psi_{p}^{(2)}\left(X_{i}, t\right)\right) \\
+\psi_{t}\left(X_{i}, S_{i}\right) &\equiv\left(\psi^{(1)}\left(X_{i}, S_{i}, t\right), \psi^{(2)}\left(X_{i}, t\right)\right)
+\end{align*}
+
+
+## Double Robust Algorithm
+
+\textbf{The Proposed Estimator:}
+\begin{equation}
+  \hat{\tau}=\frac{1}{N T} \sum_{i, t} \hat{\gamma}_{i t} Y_{i t}
+\end{equation}
+
+\textbf{The weights:} Try to minimize the variance of weights (minimize variance of $\hat\tau$)
+
+\begin{align*}
+  \left\{\hat{\gamma}_{i t}\right\}_{i t}=\underset{\left\{\gamma_{i t}\right\}_{i t}}{\arg \min } \frac{1}{(N T)^{2}} \sum_{i t} \gamma_{i t}^{2} \\
+\text { subject to: } & \frac{1}{n T} \sum_{i t} \gamma_{i t} W_{i t}=1, \quad \frac{1}{T} \sum_{i} \gamma_{i t}=0, \\
+& \frac{1}{N} \sum_{t} \gamma_{i t}=0, \quad \frac{1}{N T} \sum_{i t} \gamma_{i t} \psi_{t}\left(X_{i}, S_{i}\right)=0, \\
+\gamma_{i t} W_{i t} \geq 0
+\end{align*}
+
+
+
+# Inference
+
+## The Setup
+
+Observe a random sample $\left\{\left(\underline{Y}_{i}, \underline{W}_{i}, X_{i}\right)\right\}_{i=1}^{N}$ where each $\left(\underline{Y}_{i}, \underline{W}_{i}, X_{i}\right)$ is distributed according to distribution $\mathcal{P}$. For each unit we construct a sufficient statistic $S_{i} \equiv S\left(\underline{W}_{i}, X_{i}\right)$, which includes $\bar{W}_{i}$ that by assumption fixes the distribution of $U_i$. In the analysis we focus on approximations with large $N$ and fixed $T$.
+
+Maintaining initial Assumptions B.1 and B.2, and the following assumptions restrict the outcome model to introduce covariates in a tractable way.
+
+## 
+
+### Assumption INF.1
+Let  $\delta$ be a residual unspecified function The following restriction holds for $t \in\{1, \ldots, T\}$ :
+
+
+\begin{align*}
+&Y_{i t}(0)=\alpha_{t}\left(U_{i}\right)+\psi^{(2)}\left(X_{i}, t\right)^{\top} \delta^{(2)}+v_{i t}, \\
+&\mathbb{E}\left[v_{i t} \mid U_{i}, X_{i}\right]=0 .
+\end{align*}
+
+
+##
+
+### Assumption INF.2
+
+If Assumption I.2 is satisfied, then the following holds
+
+$$
+\begin{aligned}
+&\alpha_{t}\left(U_{i}\right)=\beta_{t}+\psi^{(1)}\left(X_{i}, S_{i}, t\right)^{\top} \delta^{(1)}+\nu_{i t}, \\
+&\mathbb{E}\left[\nu_{i t} \mid S_{i}, X_{i}\right]=0 .
+\end{aligned}
+$$
+
+Otherwise, the two-way model holds:
+
+$$
+\alpha_{t}\left(U_{i}\right)=\beta_{t}+\alpha\left(U_{i}\right) .
+$$
+
+
+
+##
+
+Define the overall error:
+
+\begin{equation}
+  \varepsilon_{i t} \equiv v_{i t}+\nu_{i t}
+\end{equation}
+
+and easily observe that under B.2 and INF.2:
+
+\begin{equation}
+  \mathbb{E}\left[\varepsilon_{i t} \mid \underline{W_{i}}, X_{i}\right]=0
+\end{equation}
+
+
+
+
+
+##
+
+Now, it is possible to separate the proposed estimator
+
+\begin{align}
+  \hat{\tau} &= \frac{1}{N T} \sum_{i t} \hat{\gamma}_{i t} Y_{i t} \\
+  &= \frac{1}{N T} \sum_{i t} \hat{\gamma}_{i t} \tau_{i t} W_{i t}+\frac{1}{N T} \sum_{i t} \hat{\gamma}_{i t}  \varepsilon_{i t}
+\end{align}
+
+And focus on the conditional weighted average treatment effect (which is a convex combination of  $\tau_{i t}$):
+
+
+\begin{equation}
+  \tau_{\text {cond }}=\frac{1}{N T} \sum_{i t} \hat{\gamma}_{i t} W_{i t} \mathbb{E}\left[\tau_{i t} \mid \underline{W}_{i}, X_{i}\right]
+\end{equation}
+
+
+and define $u_{i t} \equiv \tau_{i t}-\mathbb{E}\left[\tau_{i t} \mid \underline{W}_{i}, X_{i}\right]$ and observe that:
+
+
+\begin{equation}
+  \hat{\tau}-\tau_{\text {cond }}=\frac{1}{N T} \sum_{i t} \hat{\gamma}_{i t} u_{i t} W_{i t}+\frac{1}{N T} \sum_{i t} \hat{\gamma}_{i t} \varepsilon_{i t}
+\end{equation}
+
+
+## Inference
+
+I do not want to get into the formal results where some additional assumptions on joint distribution of panel data variables, $S_i$ and errors $\epsilon \equiv \varepsilon_{i t} + W_{i t} u_{i t}$ are made for $\hat\gamma_{i t}$ to be well-behaved that in turn guarantees the existence of the estimator, correct weight identification and asymptotic normality.
+
+
+However,  a key component for inference should be noted, that the variance estimator is constructed via conventional unit-level bootstrapping.
+
+
+With all these, the asymptotically correct/conservative confidence intervals are constructed.
+
+
+
+
+
+
+
+
+
+
+
+
+
+# Extension - Non-Binary Treatments
+
+## Non-Binary Treatments
+
+### Outcome Model
+
+\begin{align}
+&Y_{i t}(w) &=\alpha\left(U_{i}\right)+\lambda_{t}+\tau_{t}\left(U_{i}\right) w+\epsilon_{i t} \notag \\
+&\mathbb{E}\left[\epsilon_{i t} \mid U_{i}\right] &=0,
+\end{align}
+
+
+### Assignment Model
+
+Consider a baseline distribution $f_{0}(w)$ that has the same support as $W_{i t}$. Assume that the distribution of $W_{i}$ conditional on $U_{i}$ belongs to the following exponential family where $\psi_{t}(\cdot)$ is a known function:
+
+\begin{equation}
+f\left(W_{i} \mid U_{i}\right)=\exp \left\{\sum_{t} \beta^{\top}\left(U_{i}\right) \psi_{t}\left(W_{i t}\right)-\psi\left(U_{i}\right)\right\} \prod_{t} f_{0}\left(W_{i t}\right)
+\end{equation}
+
+
+## Non-Binary Treatments
+
+
+Exponential structure of the assignment model implies the general unconfoundedness condition where $S_{i}=\sum_{t} \psi_{t}\left(W_{i t}\right)$:
+
+$$
+W_{i} \bot\left\{Y_{i}(w)\right\}_{w} \mid S_{i},
+$$
+Given $S_{i}$, TWFE regression within clusters/subpopulations and aggregation would identify the treatment effects:
+
+$$
+Y_{i t}=\alpha_{i}+\lambda_{t}+\tau_{i t} W_{i t}+\epsilon_{i t},
+$$
+
+# Applications
+
+## Empirical Results
+
+Charles and Stephens (2013a, 2013b)
+
+
+- $\textbf{Y}$ - turnout at presidential elections at the county level, $\mathbb{R}^{n*T}$ matrix
+- $\textbf{W}$ - log income per capita at the county level, $\mathbb{R}^{n*T}$ matrix
+- $D_1$ - indicator for medium (1) or large (2) importance of coal in the county, $n*1$ vector
+- $D_2$ - indicator for medium (1) or large (2) importance of gas in the county, $n*1$ vector
+- $Z_1$ -  log national employment for oil and gas, $T*1$ vector
+- $Z_2$  - log national employment for coal, $T*1$ vector
+
+
+The stylized regressor is defined as such:
+
+
+$$
+Y_{i t}=\alpha_{i}+\lambda_{t}+\tau W_{i t}+\epsilon_{i t}
+$$
+
+
+## Empirical Results
+
+The authors use IV for identification and the first-stage regression is:
+
+
+$$
+\Delta W_{i t}=\theta_{t}+\gamma_{1}^{\top} D_{1 i} \Delta Z_{1 t}+\gamma_{2}^{\top} D_{2 i} \Delta Z_{2 t}+v_{i t}
+$$
+
+Arkhangelsky and Imbens propose the following first-stage regression:
+
+
+$$
+W_{i t}=\beta_{i}+\theta_{t}+\gamma_{1 i} Z_{1 t}+\gamma_{2 i} Z_{2 t}+v_{i t},
+$$
+
+
+and assume that $\left(\beta_{i}, \gamma_{1 i}, \gamma_{2 i}\right)$ are correlated with the potential outcomes, while $\left\{v_{i t}\right\}_{t}$ are not, thus effectively saying $U_{i}=\left(\beta_{i}, \gamma_{1 i}, \gamma_{2 i}\right)$
+
+
+$$
+S_{i} \equiv\left(\sum_{t \leq T} W_{i t}, \sum_{t \leq T} Z_{1 t} W_{i t}, \sum_{t \leq T} Z_{2 t} W_{i t}\right) .
+$$
+
+
+## Empirical Results
+
+
+\begin{center}
+\begin{tabular}{cccc}
+\hline & Estimate & Heterogeneity & s.e. \\
+\hline$\hat{\tau}_{F E}$ & $0.009$ & $-$ & $0.003$ \\
+$\hat{\tau}_{D R}$ & $0.013$ & $0.092$ & $0.007$ \\
+\hline
+\end{tabular}
+\end{center}
+
+
+## Simulations - Selection Bias
+
+
+\begin{center}
+\begin{table}[]
+\begin{tabular}{llllll}
+\hline
+                   & $\rho(L)$ & \multicolumn{2}{c}{RMSE} & \multicolumn{2}{c}{Bias} \\
+                   \hline&           & DR          & TW         & DR          & TW         \\
+Design $\eta=0$    & 0.045     & 0.023       & 0.03       & 0.018       & 0.028      \\
+Design $\eta=0.01$ & 0.186     & 0.067       & 0.126      & 0.06        & 0.126     \\
+Design $\eta=0.03$ & 0.29 & 0.10 & 0.20 & 0.10 & 0.20 \\ 
+Design $\eta=0.05$ & 0.36 & 0.13 & 0.25 & 0.12 & 0.25 \\ 
+\end{tabular}
+\end{table}
+\end{center}
+
+
+
+
+
+## Simulations - Different Cluster Sizes
+
+\begin{center}
+\begin{table}[]
+\centering
+\begin{tabular}{lllllll}
+  \hline
+ $\eta=0$ & \# cluster & $\rho(L)$ & \multicolumn{2}{c}{RMSE} & \multicolumn{2}{c}{Bias} \\ 
+ \hline& &          & DR          & TW         & DR          & TW         \\
+Design 1 & 748 & 0.045 & 0.022 & 0.030 & 0.018 & 0.028 \\ 
+Design 2 & 1497 & 0.045 & 0.020 & 0.030 & 0.008 & 0.028 \\ 
+Design 3 & 374 & 0.045 & 0.037 & 0.030 & 0.035 & 0.028 \\ 
+\end{tabular}
+\end{table}
+\end{center}
+
+
+
+## Simulations - Different Cluster Sizes
+
+
+\begin{center}
+\begin{table}[h]
+\begin{tabular}{rrrrrrr}
+  \hline
+$\eta=0.01$ & \# cluster & $\rho(L)$ & \multicolumn{2}{c}{RMSE} & \multicolumn{2}{c}{Bias} \\
+\hline& &          & DR          & TW         & DR          & TW         \\
+Design 1 & 748& 0.19 & 0.07 & 0.13 & 0.07 & 0.13 \\ 
+Design 2 & 1497 & 0.19 & 0.05 & 0.13 & 0.05 & 0.13 \\ 
+Design 3 & 374& 0.19 & 0.09 & 0.13 & 0.09 & 0.13 \\ 
+   \hline
+\end{tabular}
+\end{table}
+\end{center}
+
+
+<!-- $\text{}$ -->
+
+
+<!-- \begin{equation} -->
+
+<!-- \end{equation} -->
+
+
+
+
+
+<!-- \begin{equation} -->
+
+<!-- \end{equation} -->
