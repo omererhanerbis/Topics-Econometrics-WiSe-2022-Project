@@ -1,0 +1,359 @@
+rm(list = ls())
+
+# Loading required libraries
+library(mvtnorm)
+library(pryr)
+library(kableExtra)
+
+
+
+data_preparation <- function(data_mat,rank){
+  
+  # this function extracts two-way fixed effects, and low-rank component of a given matrix
+  
+  n <- dim(data_mat)[1]
+  T <- dim(data_mat)[2]
+  
+  svd_data_mat <- svd(data_mat)
+  factor_unit <- as.matrix(svd_data_mat$u[,1:rank]*sqrt(n))
+  factor_time <- as.matrix(svd_data_mat$v[,1:rank]*sqrt(T))
+  
+  magnitude <- svd_data_mat$d[1:rank]/sqrt(n*T)
+  L_mat_orig <- factor_unit%*%diag(magnitude, nrow = rank, ncol = rank)%*%t(factor_time)
+  
+  error_mat <- data_mat-L_mat_orig
+  F_mat <- outer(rowMeans(L_mat_orig),rep(1,T)) +
+    outer(rep(1,n),colMeans(L_mat_orig)) - mean(L_mat_orig)
+  L_mat <- L_mat_orig - F_mat
+  
+  return(list(L_mat,F_mat,error_mat))
+}
+
+cor_matrix_compl <- function(ar_coef,T_cur) {
+  
+  # This function constructs the correlation matrix of size T_cur, from given AR(2) coefficients. 
+  
+  
+  
+  result <- rep(0,T_cur)
+  result[1] <- 1
+  result[2] <- ar_coef[1]/(1-ar_coef[2])
+  for (t in 3:T_cur){
+    result[t] <-  ar_coef[1]*result[t-1]+ ar_coef[2]*result[t-2] 
+  }
+  
+  index_matrix <- outer(1:T_cur, 1:T_cur, function(x,y){ abs(y-x)+1})
+  cor_matrix <- matrix(result[index_matrix],ncol = T_cur,nrow = T_cur)
+  
+  return(cor_matrix)
+}
+
+
+est_function <- function(W,Y,Z,K){
+  
+  ## This function takes assignment, data, aggregate shocks and number of clusters K
+  
+  n <- dim(W)[1]
+  T <- dim(W)[2]
+  
+  # Sufficient cluster-specific statistic creation
+  S <- W%*%Z/T 
+  # set.seed(1234)
+  clust_res <- kmeans(S,K, iter.max = 20)
+  clust_ind <- clust_res$cluster
+  results_full <- matrix(0,ncol = 2, nrow = K)
+  
+  for(k in 1:K){
+    
+    index_k <- clust_ind == k
+    if (sum(index_k) > 1){
+      Y_k <- Y[index_k,]
+      W_k <- W[index_k,]
+      n_k <- sum(index_k)
+      weights_k_unnorm <- W_k - outer(rep(1,n_k),colMeans(W_k)) - outer(rowMeans(W_k),rep(1,T)) + mean(W_k)
+      weights_k <- weights_k_unnorm/(norm(weights_k_unnorm,'f')^2)
+      tau_k <- sum(Y_k*weights_k)
+      results_full[k,] <- c(tau_k,n_k)
+    }
+    else {
+      results_full[k,] <- c(NA,NA)
+    }
+  }
+  
+  agg_tau <- weighted.mean(results_full[,1],results_full[,2],na.rm = TRUE)
+  
+  
+  return(agg_tau)
+}
+
+
+
+## Data Import
+load('final_data.r')
+## Reproducible Results by Setting Seed
+set.seed(1234)
+
+
+
+
+
+
+
+# Provided variables
+Y <- full_data[[1]]
+W <- full_data[[2]]
+D_1 <- full_data[[3]]
+D_2 <- full_data[[4]]
+Z_1 <- full_data[[5]] - mean(full_data[[5]])
+Z_2 <- full_data[[6]] - mean(full_data[[6]])
+# Data dimensions
+n <- dim(Y)[1]
+T <- dim(Y)[2]
+# Constant + Covariates vector creation for S_i creation
+Z <- cbind(1,Z_1,Z_2)
+## Number of clusters
+K_1 <- floor(n/(1.25))
+K_2 <- floor(n/(1.5))
+K_3 <- floor(n/2)
+K_4 <- floor(n/4)
+K_5 <- floor(n/8)
+K_6 <- floor(n/16)
+K_7 <- floor(n/32)
+K_8 <- 1
+K_vec <- c(K_1, K_2, K_3, K_4, K_5, K_6, K_7, K_8)
+
+
+
+
+
+
+
+
+
+rank_mat <- 4
+# Treatment effect
+tau <- 0
+# Selection bias introduction
+zeta_1 <- 0.0
+zeta_2 <- 0.01
+zeta_3 <- 0.03
+zeta_4 <- 0.05
+# Simulation quantity
+B <- 1000
+
+
+
+
+# Value normalization
+W_norm <- (W -mean(W))/(norm(W-mean(W),'f')/sqrt(n*T))
+Y_norm <- (Y -mean(Y))/(norm(Y-mean(Y),'f')/sqrt(n*T))
+
+# Decomposition
+Y_decomp <- data_preparation(Y_norm,rank_mat)
+W_decomp <- data_preparation(W_norm,rank_mat)
+
+# Assignment of decomposed values
+L_mat_y <-Y_decomp[[1]]
+F_mat_y <- Y_decomp[[2]]
+E_mat_y <- Y_decomp[[3]]
+
+L_mat_w <-W_decomp[[1]]
+F_mat_w <- W_decomp[[2]]
+E_mat_w <- W_decomp[[3]]
+
+
+# Correlation & Covariance matrix creation
+cor_matrix_w <- cor_matrix_compl(c(0,0),T)
+scale_var_w <- norm(t(E_mat_w)%*%E_mat_w/n,'f')/norm(cor_matrix_w,'f')
+cov_mat_w <- cor_matrix_w*scale_var_w
+
+cor_matrix_y <- cor_matrix_compl(c(0,0),T)
+scale_var_y <- norm(t(E_mat_y)%*%E_mat_y/n,'f')/norm(cor_matrix_y,'f')
+cov_mat_y <- cor_matrix_y*scale_var_y
+
+
+
+
+
+size_L_w <- round(norm(L_mat_w,'f')^2/(n*T),3)
+size_F_w <- round(norm(F_mat_w,'f')^2/(n*T),3)
+size_E_w <- round(norm(E_mat_w,'f')^2/(n*T),3)
+
+size_L_y <- round(norm(L_mat_y,'f')^2/(n*T),3)
+size_F_y <- round(norm(F_mat_y,'f')^2/(n*T),3)
+size_E_y <- round(norm(E_mat_y,'f')^2/(n*T),3)
+
+rho_er <- sum(diag(E_mat_w%*%t(E_mat_y)/(T*n)))/(sqrt(size_E_w*size_E_y))
+rho_L <- sum(diag(L_mat_w%*%t(L_mat_y)/(T*n)))/(sqrt(size_L_w*size_L_y))
+rho_F <- sum(diag(F_mat_w%*%t(F_mat_y)/(T*n)))/(sqrt(size_F_w*size_F_y))
+
+
+
+sizes_orig <- round(rbind(c(size_L_w,size_F_w,size_E_w),
+                          c(size_L_y,size_F_y,size_E_y),
+                          c(rho_L, rho_F, rho_er)),2)
+
+colnames(sizes_orig) <- c('L','F','E')
+rownames(sizes_orig) <- c('W','Y','cor')
+
+
+
+
+
+
+
+
+
+
+
+# Simulations
+
+## Design 1 - No Selection Bias
+
+
+rho <- 1-zeta_1
+upd_L_y <- rho*L_mat_y+sqrt(1-rho^2)*L_mat_w*sqrt(size_L_y/size_L_w) 
+size_upd_L_y <- round(norm(upd_L_y,'f')^2/(n*T),3)
+norm_L_y <- upd_L_y*sqrt(size_upd_L_y/size_L_y)
+
+sim_res_1 <- do.call(rbind,lapply(1:B, function(b) {
+  
+  index_b <- sample(1:n, n,replace = TRUE)
+  noise_w <- rmvnorm(n,sigma = cov_mat_w)
+  noise_y <- rmvnorm(n,sigma = cov_mat_y)
+  
+  W_b <- L_mat_w[index_b,] +F_mat_w[index_b,] + noise_w
+  Y_b <- norm_L_y[index_b,] +F_mat_y[index_b,] +tau*W_b+ noise_y*sqrt(1-rho_er^2) +  noise_w*rho_er*sqrt(size_E_y/size_E_w)
+  
+  tau_calc <- pryr::partial(est_function, W=W_b,Y=Y_b,Z=Z)
+  a_tau_coll <- sapply(K_vec, FUN=tau_calc)
+  
+  return(a_tau_coll)
+}))
+
+
+## Design 2 - Selection Bias $\eta = 0.01$
+
+
+
+rho <- 1-zeta_2
+upd_L_y <- rho*L_mat_y+sqrt(1-rho^2)*L_mat_w*sqrt(size_L_y/size_L_w) 
+size_upd_L_y <- round(norm(upd_L_y,'f')^2/(n*T),3)
+norm_L_y <- upd_L_y*sqrt(size_upd_L_y/size_L_y)
+
+sim_res_2 <- do.call(rbind,lapply(1:B, function(b) {
+  
+  index_b <- sample(1:n, n,replace = TRUE)
+  noise_w <- rmvnorm(n,sigma = cov_mat_w)
+  noise_y <- rmvnorm(n,sigma = cov_mat_y)
+  
+  W_b <- L_mat_w[index_b,] +F_mat_w[index_b,] + noise_w
+  Y_b <- norm_L_y[index_b,] +F_mat_y[index_b,] +tau*W_b+ noise_y*sqrt(1-rho_er^2) +  noise_w*rho_er*sqrt(size_E_y/size_E_w)
+  
+  tau_calc <- pryr::partial(est_function, W=W_b,Y=Y_b,Z=Z)
+  a_tau_coll <- sapply(K_vec, FUN=tau_calc)
+  
+  return(a_tau_coll)
+}))
+
+
+
+## Design 3 - Selection Bias $\eta = 0.03$
+
+
+
+rho <- 1-zeta_3
+upd_L_y <- rho*L_mat_y+sqrt(1-rho^2)*L_mat_w*sqrt(size_L_y/size_L_w) 
+size_upd_L_y <- round(norm(upd_L_y,'f')^2/(n*T),3)
+norm_L_y <- upd_L_y*sqrt(size_upd_L_y/size_L_y)
+
+sim_res_3 <- do.call(rbind,lapply(1:B, function(b) {
+  
+  index_b <- sample(1:n, n,replace = TRUE)
+  noise_w <- rmvnorm(n,sigma = cov_mat_w)
+  noise_y <- rmvnorm(n,sigma = cov_mat_y)
+  
+  W_b <- L_mat_w[index_b,] +F_mat_w[index_b,] + noise_w
+  Y_b <- norm_L_y[index_b,] +F_mat_y[index_b,] +tau*W_b+ noise_y*sqrt(1-rho_er^2) +  noise_w*rho_er*sqrt(size_E_y/size_E_w)
+  
+  tau_calc <- pryr::partial(est_function, W=W_b,Y=Y_b,Z=Z)
+  a_tau_coll <- sapply(K_vec, FUN=tau_calc)
+  
+  return(a_tau_coll)
+}))
+
+
+
+## Design 4 - Selection Bias $\eta = 0.05$
+
+
+rho <- 1-zeta_4
+upd_L_y <- rho*L_mat_y+sqrt(1-rho^2)*L_mat_w*sqrt(size_L_y/size_L_w) 
+size_upd_L_y <- round(norm(upd_L_y,'f')^2/(n*T),3)
+norm_L_y <- upd_L_y*sqrt(size_upd_L_y/size_L_y)
+
+sim_res_4 <- do.call(rbind,lapply(1:B, function(b) {
+  
+  index_b <- sample(1:n, n,replace = TRUE)
+  noise_w <- rmvnorm(n,sigma = cov_mat_w)
+  noise_y <- rmvnorm(n,sigma = cov_mat_y)
+  
+  W_b <- L_mat_w[index_b,] +F_mat_w[index_b,] + noise_w
+  Y_b <- norm_L_y[index_b,] +F_mat_y[index_b,] +tau*W_b+ noise_y*sqrt(1-rho_er^2) +  noise_w*rho_er*sqrt(size_E_y/size_E_w)
+  
+  
+  tau_calc <- pryr::partial(est_function, W=W_b,Y=Y_b,Z=Z)
+  a_tau_coll <- sapply(K_vec, FUN=tau_calc)
+  
+  return(a_tau_coll)
+}))
+
+
+
+
+
+
+
+
+rmse_1 <- sqrt(colMeans((sim_res_1-tau)^2))
+rmse_2 <- sqrt(colMeans((sim_res_2-tau)^2))
+rmse_3 <- sqrt(colMeans((sim_res_3-tau)^2))
+rmse_4 <- sqrt(colMeans((sim_res_4-tau)^2))
+bias_1 <- colMeans(sim_res_1-tau)
+bias_2 <- colMeans(sim_res_2-tau)
+bias_3 <- colMeans(sim_res_3-tau)
+bias_4 <- colMeans(sim_res_4-tau)
+
+K_names <- paste0(K_vec, "cluster/s")
+table_1 <- round(rbind(rmse_1, bias_1, rmse_2, bias_2, rmse_3, bias_3, rmse_4, bias_4),3)
+colnames(table_1) <- c(K_names)
+rownames(table_1) <- c('rmse_design_1','bias_design_1','rmse_design_2','bias_design_2',
+                       'rmse_design_3','bias_design_3','rmse_design_4','bias_design_4')
+
+table_1 %>%
+  kbl() %>%
+  kable_styling()
+
+# table_1
+
+
+
+
+
+
+# Plots
+
+plot(K_vec, rmse_1, col=("black"), main = "RMSE Results", pch = 1, ylim = c(0, 0.25), xlim = c(0, 3000))
+points(K_vec,rmse_2, col=("blue"), pch = 7)
+points(K_vec,rmse_3, col=("green"), pch = 18)
+points(K_vec,rmse_4, col=("red"), pch = 24)
+legend("topright", legend=c('design_1','design_2','design_3','design_4'),
+       col=c("black", "blue", "green", "red"), pch=c(1,7,18,24), cex=0.8)
+
+
+plot(K_vec, bias_1, col=("black"), main = "Bias Results", pch = 1, ylim = c(0, 0.25), xlim = c(0, 3000))
+points(K_vec, bias_2, col=("blue"), pch = 7)
+points(K_vec, bias_3, col=("green"), pch = 18)
+points(K_vec, bias_4, col=("red"), pch = 24)
+legend("topright", legend=c('design_1','design_2','design_3','design_4'),
+       col=c("black", "blue", "green", "red"), pch=c(1,7,18,24), cex=0.8)
